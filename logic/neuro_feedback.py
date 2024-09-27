@@ -7,7 +7,7 @@ class NeuroFB(PwrBands):
     RELAX = "Relax"
     SIGNED = ""
     UNSIGNED = "Pos"
-    FOCUS_AVG_SIDE = "FocusAvgSide"
+    AVG_SIDE = "AvgSide"
 
     def __init__(self, board, window_seconds=2, normalize_scale=1.1, ema_decay=0.025):
         super().__init__(board, window_seconds=window_seconds, ema_decay=ema_decay)
@@ -36,16 +36,10 @@ class NeuroFB(PwrBands):
         for nfb_name, nfb_func in function_dict.items():
             signed_dict = {location + NeuroFB.SIGNED : nfb_func(location) for location in power_dict}
             unsigned_dict = {location + NeuroFB.UNSIGNED : (value+1)/2 for location, value in signed_dict.items()}
-            inner_flat_dict = signed_dict | unsigned_dict
+            avg_side_dict = {NeuroFB.AVG_SIDE : (unsigned_dict[PwrBands.RIGHT + NeuroFB.UNSIGNED] - unsigned_dict[PwrBands.LEFT + NeuroFB.UNSIGNED])}
+            inner_flat_dict = signed_dict | unsigned_dict | avg_side_dict
             inner_flat_dict = {nfb_name + key : value for key, value in inner_flat_dict.items()}
             ret_dict |= inner_flat_dict
-
-        # Calculate FocusAvgSide using FocusLeftPos and FocusRightPos
-        focus_left_pos = ret_dict.get(NeuroFB.FOCUS + PwrBands.LEFT + NeuroFB.UNSIGNED, 0)
-        focus_right_pos = ret_dict.get(NeuroFB.FOCUS + PwrBands.RIGHT + NeuroFB.UNSIGNED, 0)
-
-        focus_avg_side = focus_right_pos - focus_left_pos
-        ret_dict[NeuroFB.FOCUS_AVG_SIDE] = focus_avg_side
 
         return ret_dict
 
